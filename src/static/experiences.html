@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Experiences — WavePad</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d2e;
+      --border: #2a2d3e;
+      --accent: #7c6af7;
+      --text: #e2e8f0;
+      --muted: #718096;
+      --green: #48bb78;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    header h1 { font-size: 1.2rem; font-weight: 600; }
+    header h1 span { color: var(--accent); }
+
+    .back-btn {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.85rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: color 0.15s;
+    }
+    .back-btn:hover { color: var(--text); }
+
+    main {
+      padding: 40px 32px;
+      max-width: 1000px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .intro {
+      margin-bottom: 36px;
+    }
+    .intro h2 { font-size: 1.5rem; margin-bottom: 8px; }
+    .intro p { color: var(--muted); font-size: 0.95rem; line-height: 1.6; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: border-color 0.2s, transform 0.15s;
+      position: relative;
+      overflow: hidden;
+    }
+    .card:hover { border-color: var(--accent); transform: translateY(-2px); }
+
+    .card-icon { font-size: 2rem; line-height: 1; }
+
+    .card-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+    }
+
+    .card-desc {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.6;
+      flex: 1;
+    }
+
+    .card-tags {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .tag {
+      font-size: 0.7rem;
+      padding: 2px 8px;
+      border-radius: 20px;
+      background: rgba(124, 106, 247, 0.15);
+      border: 1px solid rgba(124, 106, 247, 0.3);
+      color: var(--accent);
+    }
+    .tag.green {
+      background: rgba(72, 187, 120, 0.1);
+      border-color: rgba(72, 187, 120, 0.3);
+      color: var(--green);
+    }
+    .tag.orange {
+      background: rgba(237, 137, 54, 0.12);
+      border-color: rgba(237, 137, 54, 0.35);
+      color: #ed8936;
+    }
+
+    .card-action {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 18px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+      transition: opacity 0.15s;
+      margin-top: 4px;
+    }
+    .card-action.primary {
+      background: var(--accent);
+      color: #fff;
+    }
+    .card-action.primary:hover { opacity: 0.85; }
+    .card-action.disabled {
+      background: var(--border);
+      color: var(--muted);
+      cursor: default;
+      pointer-events: none;
+    }
+
+    .badge-soon {
+      position: absolute;
+      top: 16px; right: 16px;
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      background: rgba(113, 128, 150, 0.2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 2px 8px;
+      border-radius: 20px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Wave<span>Pad</span></h1>
+  <a href="/" class="back-btn">&#8592; Back to Monitor</a>
+</header>
+
+<main>
+  <div class="intro">
+    <h2>Choose an Experience</h2>
+    <p>Your phone is the controller. Each experience runs entirely in this browser — no app needed.<br/>
+    Make sure your mobile is connected before launching.</p>
+  </div>
+
+  <div class="grid">
+
+    <!-- Battle Painter -->
+    <div class="card">
+      <div class="card-icon">&#127912;</div>
+      <div class="card-title">Battle Painter</div>
+      <div class="card-desc">
+        Tilt your phone to slide your brush and paint the arena.
+        Cover more territory than your opponents before time runs out.
+      </div>
+      <div class="card-tags">
+        <span class="tag orange">&#128101; Multiplayer</span>
+        <span class="tag">Orientation</span>
+        <span class="tag green">Ready</span>
+      </div>
+      <a href="/exp/battle-painter" class="card-action primary">&#9654; Launch</a>
+    </div>
+
+    <!-- Tilt Snake -->
+    <div class="card">
+      <div class="card-icon">&#128013;</div>
+      <div class="card-title">Tilt Snake</div>
+      <div class="card-desc">
+        Tilt your phone to steer the snake. Eat food squares to grow longer.
+        Don&rsquo;t hit the walls or your own tail!
+      </div>
+      <div class="card-tags">
+        <span class="tag">&#128101; Single Player</span>
+        <span class="tag">Orientation</span>
+        <span class="tag green">Ready</span>
+      </div>
+      <a href="/exp/tilt-snake" class="card-action primary">&#9654; Launch</a>
+    </div>
+
+  </div>
+</main>
+
+</body>
+</html>

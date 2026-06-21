@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tilt Snake — WavePad</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:      #0f1117;
+      --surface: #1a1d2e;
+      --border:  #2a2d3e;
+      --accent:  #7c6af7;
+      --text:    #e2e8f0;
+      --muted:   #718096;
+      --green:   #48bb78;
+      --red:     #fc8181;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      overflow: hidden;
+    }
+
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    header h1 { font-size: 1rem; font-weight: 700; white-space: nowrap; }
+    header h1 span { color: var(--accent); }
+
+    .back-btn {
+      color: var(--muted); text-decoration: none;
+      font-size: 0.82rem; white-space: nowrap; flex-shrink: 0;
+    }
+    .back-btn:hover { color: var(--text); }
+
+    #hud {
+      display: flex; align-items: center; gap: 18px;
+      font-size: 0.82rem;
+    }
+    #ws-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--red); transition: background 0.3s; flex-shrink: 0;
+    }
+    #ws-dot.ok { background: var(--green); }
+    .hud-item { display: flex; flex-direction: column; align-items: center; gap: 1px; }
+    .hud-val  { font-weight: 700; font-variant-numeric: tabular-nums; font-size: 1rem; }
+    .hud-lbl  {
+      font-size: 0.58rem; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.08em;
+    }
+
+    #game-wrap {
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden; background: var(--bg);
+    }
+    canvas { display: block; }
+
+    footer {
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: 7px 20px; font-size: 0.72rem;
+      color: var(--muted); text-align: center;
+    }
+
+    #overlay {
+      position: fixed; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 20px;
+      background: rgba(15,17,23,0.92);
+      backdrop-filter: blur(8px);
+      z-index: 30;
+    }
+    #overlay.hidden { display: none; }
+
+    .ov-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; padding: 34px 40px;
+      width: min(420px, 92vw); text-align: center;
+      display: flex; flex-direction: column; align-items: center; gap: 18px;
+    }
+    .ov-card h2 { font-size: 2rem; font-weight: 800; }
+    .ov-card p  { color: var(--muted); font-size: 0.88rem; line-height: 1.65; }
+
+    .score-big {
+      font-size: 4rem; font-weight: 900;
+      color: var(--accent); line-height: 1;
+    }
+    .score-sub {
+      font-size: 0.68rem; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.12em; margin-top: 4px;
+    }
+
+    .hint-row { display: flex; gap: 28px; justify-content: center; }
+    .hint { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+    .hint .icon { font-size: 1.8rem; }
+    .hint span  { font-size: 0.72rem; color: var(--muted); }
+
+    .action-btn {
+      background: var(--accent); color: #fff;
+      border: none; border-radius: 8px;
+      padding: 11px 36px; font-size: 0.95rem; font-weight: 600;
+      cursor: pointer; transition: opacity 0.15s; width: 100%;
+    }
+    .action-btn:hover { opacity: 0.85; }
+
+    .replay-btn {
+      background: transparent; color: var(--text);
+      border: 1px solid var(--border); border-radius: 8px;
+      padding: 9px 26px; font-size: 0.88rem; font-weight: 600;
+      cursor: pointer; transition: border-color 0.15s; width: 100%;
+    }
+    .replay-btn:hover { border-color: var(--accent); }
+
+    .new-best {
+      font-size: 0.82rem; font-weight: 700;
+      color: var(--green); letter-spacing: 0.05em;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>&#128013; Tilt <span>Snake</span></h1>
+  <div id="hud">
+    <div id="ws-dot"></div>
+    <div class="hud-item">
+      <span class="hud-val" id="hud-score">0</span>
+      <span class="hud-lbl">Score</span>
+    </div>
+    <div class="hud-item">
+      <span class="hud-val" id="hud-best">0</span>
+      <span class="hud-lbl">Best</span>
+    </div>
+    <div class="hud-item">
+      <span class="hud-val" id="hud-len">3</span>
+      <span class="hud-lbl">Length</span>
+    </div>
+  </div>
+  <a href="/experiences" class="back-btn">&#8592; Experiences</a>
+</header>
+
+<div id="game-wrap">
+  <canvas id="c"></canvas>
+</div>
+
+<footer>&#128241; Tilt phone to steer &middot; eat red squares to grow &middot; don&rsquo;t hit walls or your tail</footer>
+
+<div id="overlay">
+
+  <div id="ov-start" class="ov-card">
+    <h2>&#128013; Tilt Snake</h2>
+    <p>Tilt your phone to steer the snake.<br>
+       Eat the glowing red squares to grow.<br>
+       Don&rsquo;t crash into walls or your own tail!</p>
+    <div class="hint-row">
+      <div class="hint">
+        <span class="icon">&#128241;</span>
+        <span>Tilt phone</span>
+      </div>
+      <div class="hint">
+        <span class="icon">&#8679;</span>
+        <span>Arrow keys</span>
+      </div>
+    </div>
+    <button class="action-btn" onclick="startGame()">&#9654;&nbsp; Start</button>
+  </div>
+
+  <div id="ov-gameover" class="ov-card" style="display:none">
+    <h2>&#128128; Game Over</h2>
+    <div>
+      <div class="score-big" id="go-score">0</div>
+      <div class="score-sub">Score</div>
+    </div>
+    <div id="go-new-best" class="new-best" style="display:none">&#127942; New Best!</div>
+    <button class="action-btn" onclick="startGame()">&#9654;&nbsp; Play Again</button>
+    <button class="replay-btn" onclick="showStart()">&#8592; Menu</button>
+  </div>
+
+</div>
+
+<script>
+// Config
+const GRID          = 20;
+const BASE_INTERVAL = 130;   // ms per tick (lower = faster)
+const MIN_INTERVAL  = 55;
+const SPEED_EVERY   = 4;     // speed up every N food eaten
+const TILT_THRESH   = 14;    // degrees
+
+// State
+let snake, dir, nextDir, food;
+let score     = 0;
+let bestScore = parseInt(localStorage.getItem('snake_best') || '0');
+let tickTimer = null;
+let rafId     = null;
+let cellSize  = 0;
+let cW        = 0;
+
+// Canvas
+const canvas = document.getElementById('c');
+const ctx    = canvas.getContext('2d');
+const wrap   = document.getElementById('game-wrap');
+
+function resize() {
+  const side = Math.min(wrap.clientWidth, wrap.clientHeight) - 4;
+  cW = side;
+  canvas.width = canvas.height = cW;
+  cellSize = Math.floor(cW / GRID);
+}
+window.addEventListener('resize', () => { resize(); draw(); });
+
+// Tilt input
+let tiltX = 0, tiltY = 0;
+
+function applyTilt() {
+  const ax = Math.abs(tiltX), ay = Math.abs(tiltY);
+  if (ax < TILT_THRESH && ay < TILT_THRESH) return;
+  if (ax >= ay) {
+    if (tiltX < -TILT_THRESH && dir.x !== 1)  nextDir = { x: -1, y: 0 };
+    if (tiltX >  TILT_THRESH && dir.x !== -1) nextDir = { x:  1, y: 0 };
+  } else {
+    if (tiltY < -TILT_THRESH && dir.y !== 1)  nextDir = { x: 0, y: -1 };
+    if (tiltY >  TILT_THRESH && dir.y !== -1) nextDir = { x: 0, y:  1 };
+  }
+}
+
+// Arrow keys fallback
+window.addEventListener('keydown', e => {
+  if (!tickTimer) return;
+  const map = {
+    ArrowLeft:  { x: -1, y:  0 },
+    ArrowRight: { x:  1, y:  0 },
+    ArrowUp:    { x:  0, y: -1 },
+    ArrowDown:  { x:  0, y:  1 },
+  };
+  const d = map[e.key];
+  if (!d) return;
+  if (d.x === -dir.x && d.y === -dir.y) return;
+  nextDir = d;
+  e.preventDefault();
+});
+
+// Helpers
+function spawnFood() {
+  const occupied = new Set(snake.map(s => `${s.x},${s.y}`));
+  let pos;
+  do {
+    pos = {
+      x: Math.floor(Math.random() * GRID),
+      y: Math.floor(Math.random() * GRID),
+    };
+  } while (occupied.has(`${pos.x},${pos.y}`));
+  return pos;
+}
+
+function tickInterval() {
+  const steps = Math.floor(score / SPEED_EVERY);
+  const range = BASE_INTERVAL - MIN_INTERVAL;
+  return Math.max(MIN_INTERVAL, BASE_INTERVAL - steps * (range / 20));
+}
+
+function updateHUD() {
+  document.getElementById('hud-score').textContent = score;
+  document.getElementById('hud-best').textContent  = bestScore;
+  document.getElementById('hud-len').textContent   = snake ? snake.length : 3;
+}
+
+// Drawing
+function draw() {
+  ctx.clearRect(0, 0, cW, cW);
+  ctx.fillStyle = '#0f1117';
+  ctx.fillRect(0, 0, cW, cW);
+
+  const cs = cellSize;
+
+  // Grid lines
+  ctx.strokeStyle = 'rgba(42,45,62,0.8)';
+  ctx.lineWidth = 0.5;
+  for (let i = 0; i <= GRID; i++) {
+    ctx.beginPath(); ctx.moveTo(i * cs, 0);       ctx.lineTo(i * cs, GRID * cs); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0,      i * cs);  ctx.lineTo(GRID * cs, i * cs); ctx.stroke();
+  }
+
+  if (!snake || !food) return;
+
+  // Food
+  const fx = food.x * cs, fy = food.y * cs;
+  const pulse = 0.5 + 0.5 * Math.sin(Date.now() / 260);
+  const fp = 3;
+
+  ctx.globalAlpha = 0.18 + 0.18 * pulse;
+  ctx.fillStyle = '#fc8181';
+  ctx.fillRect(fx - 5, fy - 5, cs + 10, cs + 10);
+  ctx.globalAlpha = 1;
+
+  ctx.fillStyle = `rgb(${Math.round(210 + 45 * pulse)},${Math.round(70 + 30 * pulse)},${Math.round(70 + 30 * pulse)})`;
+  ctx.beginPath();
+  ctx.roundRect(fx + fp, fy + fp, cs - fp * 2, cs - fp * 2, 4);
+  ctx.fill();
+
+  ctx.fillStyle = 'rgba(255,255,255,0.28)';
+  ctx.beginPath();
+  ctx.roundRect(fx + fp, fy + fp, cs - fp * 2, (cs - fp * 2) * 0.38, [4, 4, 0, 0]);
+  ctx.fill();
+
+  // Snake
+  const len = snake.length;
+  snake.forEach((seg, i) => {
+    const isHead = i === len - 1;
+    const t = len <= 1 ? 1 : i / (len - 1);
+    const sx = seg.x * cs, sy = seg.y * cs;
+
+    if (isHead) {
+      ctx.fillStyle = '#a393ff';
+      ctx.beginPath();
+      ctx.roundRect(sx + 1, sy + 1, cs - 2, cs - 2, 5);
+      ctx.fill();
+
+      // Eyes
+      const er = Math.max(2, cs * 0.1);
+      let e1x, e1y, e2x, e2y;
+      if      (dir.x ===  1) { e1x = sx+cs*0.72; e1y = sy+cs*0.28; e2x = sx+cs*0.72; e2y = sy+cs*0.72; }
+      else if (dir.x === -1) { e1x = sx+cs*0.28; e1y = sy+cs*0.28; e2x = sx+cs*0.28; e2y = sy+cs*0.72; }
+      else if (dir.y === -1) { e1x = sx+cs*0.28; e1y = sy+cs*0.28; e2x = sx+cs*0.72; e2y = sy+cs*0.28; }
+      else                   { e1x = sx+cs*0.28; e1y = sy+cs*0.72; e2x = sx+cs*0.72; e2y = sy+cs*0.72; }
+      ctx.fillStyle = '#fff';
+      ctx.beginPath(); ctx.arc(e1x, e1y, er, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(e2x, e2y, er, 0, Math.PI * 2); ctx.fill();
+
+    } else {
+      const r = Math.round(80  + t * (140 - 80));
+      const g = Math.round(55  + t * (90  - 55));
+      const b = Math.round(180 + t * (240 - 180));
+      ctx.fillStyle = `rgb(${r},${g},${b})`;
+      const p = 2;
+      ctx.beginPath();
+      ctx.roundRect(sx + p, sy + p, cs - p * 2, cs - p * 2, 3);
+      ctx.fill();
+    }
+  });
+}
+
+function startRenderLoop() {
+  if (rafId) cancelAnimationFrame(rafId);
+  function frame() { draw(); rafId = requestAnimationFrame(frame); }
+  rafId = requestAnimationFrame(frame);
+}
+
+// Game tick
+function tick() {
+  applyTilt();
+  dir = { ...nextDir };
+
+  const head = snake[snake.length - 1];
+  const nx   = head.x + dir.x;
+  const ny   = head.y + dir.y;
+
+  if (nx < 0 || nx >= GRID || ny < 0 || ny >= GRID) return endGame();
+  if (snake.some(s => s.x === nx && s.y === ny))     return endGame();
+
+  snake.push({ x: nx, y: ny });
+
+  if (nx === food.x && ny === food.y) {
+    score++;
+    bestScore = Math.max(score, bestScore);
+    localStorage.setItem('snake_best', bestScore);
+    food = spawnFood();
+    updateHUD();
+    clearInterval(tickTimer);
+    tickTimer = setInterval(tick, tickInterval());
+  } else {
+    snake.shift();
+  }
+}
+
+// Game flow
+function startGame() {
+  resize();
+  const mid = Math.floor(GRID / 2);
+  snake   = [{ x: mid-2, y: mid }, { x: mid-1, y: mid }, { x: mid, y: mid }];
+  dir     = { x: 1, y: 0 };
+  nextDir = { x: 1, y: 0 };
+  score   = 0;
+  food    = spawnFood();
+  tiltX   = 0;
+  tiltY   = 0;
+  updateHUD();
+
+  document.getElementById('ov-start').style.display    = 'none';
+  document.getElementById('ov-gameover').style.display = 'none';
+  document.getElementById('overlay').classList.add('hidden');
+
+  if (tickTimer) clearInterval(tickTimer);
+  tickTimer = setInterval(tick, tickInterval());
+  startRenderLoop();
+}
+
+function endGame() {
+  clearInterval(tickTimer);
+  tickTimer = null;
+  bestScore = Math.max(score, bestScore);
+  localStorage.setItem('snake_best', bestScore);
+
+  const isNewBest = score > 0 && score >= bestScore;
+  document.getElementById('go-score').textContent      = score;
+  document.getElementById('go-new-best').style.display = isNewBest ? '' : 'none';
+  document.getElementById('ov-gameover').style.display = 'flex';
+  document.getElementById('overlay').classList.remove('hidden');
+  updateHUD();
+}
+
+function showStart() {
+  if (tickTimer) { clearInterval(tickTimer); tickTimer = null; }
+  snake = null;
+  document.getElementById('ov-gameover').style.display = 'none';
+  document.getElementById('ov-start').style.display    = 'flex';
+  document.getElementById('overlay').classList.remove('hidden');
+}
+
+// WebSocket
+let ws;
+function connectWS() {
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  ws = new WebSocket(`${proto}//${location.host}/ws/laptop`);
+  ws.onopen  = () => document.getElementById('ws-dot').classList.add('ok');
+  ws.onclose = () => {
+    document.getElementById('ws-dot').classList.remove('ok');
+    setTimeout(connectWS, 2000);
+  };
+  ws.onerror = () => ws.close();
+  ws.onmessage = (e) => {
+    try {
+      const msg = JSON.parse(e.data);
+      if (msg.type !== 'motion') return;
+      tiltX = Math.max(-90, Math.min(90, msg.orientation?.gamma ?? 0));
+      tiltY = Math.max(-90, Math.min(90, msg.orientation?.beta  ?? 0));
+    } catch { /* ignore */ }
+  };
+}
+
+// Init
+resize();
+document.getElementById('hud-best').textContent = bestScore;
+draw();
+startRenderLoop();
+connectWS();
+</script>
+</body>
+</html>
