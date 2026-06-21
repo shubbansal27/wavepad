@@ -47,6 +47,7 @@ def generate(cert_path: Path, key_path: Path) -> str:
                 x509.IPAddress(ipaddress.IPv4Address(local_ip)),
                 x509.IPAddress(ipaddress.IPv4Address("127.0.0.1")),
                 x509.DNSName("localhost"),
+                x509.DNSName("wavepad.portmap.io"),
             ]),
             critical=False,
         )

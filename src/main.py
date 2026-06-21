@@ -41,6 +41,8 @@ def _release_player_id(pid: str) -> None:
 
 def get_local_ip() -> str:
     """Return the en0 (WiFi) IPv4 address, falling back to UDP-probe if unavailable."""
+    return "wavepad.portmap.io"
+
     try:
         addrs = netifaces.ifaddresses("en0")
         return addrs[netifaces.AF_INET][0]["addr"]
@@ -89,7 +91,7 @@ async def exp_tilt_snake():
 @app.get("/qr.png")
 async def generate_qr():
     local_ip = get_local_ip()
-    url = f"https://{local_ip}:8000/mobile"
+    url = f"https://{local_ip}/mobile"
     qr = qrcode.QRCode(
         version=None,
         error_correction=qrcode.constants.ERROR_CORRECT_H,
